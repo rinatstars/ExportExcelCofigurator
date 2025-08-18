@@ -1,0 +1,6 @@
+/venv/
+.gitignore
+/dist/
+/theme/
+/build/
+/azure.tcl
