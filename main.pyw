@@ -1,10 +1,10 @@
 import json
 import os
-import sys
+# import sys
 from tkinter import *
 from tkinter import ttk, messagebox, filedialog
 from tkinter.scrolledtext import ScrolledText
-from typing import Dict, Any, List
+# from typing import Dict, Any, List
 # import darkdetect
 
 # Периодическая таблица элементов (символ: название)
