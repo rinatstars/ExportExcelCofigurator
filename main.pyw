@@ -174,6 +174,7 @@ class SettingsEditor:
         self.output_format_var = StringVar()
         self.sample_output_format_var = StringVar()
         self.xml_folder_var = StringVar()
+        self.report_folder_var = StringVar()
         self.sig_fig_var = IntVar()
         self.delete_xml_var = BooleanVar()
         self.header_vars = {}
@@ -328,19 +329,23 @@ class SettingsEditor:
         ttk.Entry(frame, textvariable=self.xml_folder_var, width=60).grid(row=0, column=1, padx=5, sticky=EW)
         ttk.Button(frame, text="Обзор...", command=self.browse_xml_folder).grid(row=0, column=2, padx=5)
 
-        ttk.Label(frame, text="Формат имени файла:").grid(row=1, column=0, sticky=W, pady=2)
-        ttk.Entry(frame, textvariable=self.output_format_var, width=60).grid(row=1, column=1, columnspan=2, padx=5,
+        ttk.Label(frame, text="Папка с Отчетами:").grid(row=1, column=0, sticky=W, pady=2)
+        ttk.Entry(frame, textvariable=self.report_folder_var, width=60).grid(row=1, column=1, padx=5, sticky=EW)
+        ttk.Button(frame, text="Обзор...", command=self.browse_report_folder).grid(row=1, column=2, padx=5)
+
+        ttk.Label(frame, text="Формат имени файла:").grid(row=2, column=0, sticky=W, pady=2)
+        ttk.Entry(frame, textvariable=self.output_format_var, width=60).grid(row=2, column=1, columnspan=2, padx=5,
                                                                              sticky=EW)
 
-        ttk.Label(frame, text="Пример:").grid(row=2, column=0, sticky=W, pady=2)
+        ttk.Label(frame, text="Пример:").grid(row=3, column=0, sticky=W, pady=2)
         ttk.Entry(frame, textvariable=self.sample_output_format_var, width=60,
-                  state='disabled').grid(row=2, column=1, columnspan=2, padx=5, sticky=EW)
+                  state='disabled').grid(row=3, column=1, columnspan=2, padx=5, sticky=EW)
 
-        ttk.Label(frame, text="Значимые цифры:").grid(row=3, column=0, sticky=W, pady=2)
-        ttk.Spinbox(frame, textvariable=self.sig_fig_var, from_=1, to=10, width=5).grid(row=3, column=1, sticky=W,
+        ttk.Label(frame, text="Значимые цифры:").grid(row=4, column=0, sticky=W, pady=2)
+        ttk.Spinbox(frame, textvariable=self.sig_fig_var, from_=1, to=10, width=5).grid(row=4, column=1, sticky=W,
                                                                                         padx=5)
 
-        ttk.Checkbutton(frame, text="Удалять XML после обработки", variable=self.delete_xml_var).grid(row=4, column=0,
+        ttk.Checkbutton(frame, text="Удалять XML после обработки", variable=self.delete_xml_var).grid(row=5, column=0,
                                                                                                       columnspan=3,
                                                                                                       sticky=W, pady=5)
 
@@ -367,6 +372,7 @@ class SettingsEditor:
 
         # Обработчики изменений
         self.xml_folder_var.trace_add('write', lambda *_: self.update_config_and_json())
+        self.report_folder_var.trace_add('write', lambda *_: self.update_config_and_json())
         self.output_format_var.trace_add('write', lambda *_: self.update_filename_example())
         self.sig_fig_var.trace_add('write', lambda *_: self.update_config_and_json())
         self.delete_xml_var.trace_add('write', lambda *_: self.update_config_and_json())
@@ -537,6 +543,13 @@ class SettingsEditor:
             self.xml_folder_var.set(folder)
             self.update_config_and_json()
 
+    def browse_report_folder(self):
+        """Выбор папки для экспорта Отчетов"""
+        folder = filedialog.askdirectory()
+        if folder:
+            self.report_folder_var.set(folder)
+            self.update_config_and_json()
+
     def on_element_select(self, event):
         """Обработка выбора элемента в таблице Treeview"""
         selected = self.element_tree.selection()
@@ -676,6 +689,7 @@ class SettingsEditor:
 
         # Общие настройки
         self.xml_folder_var.set(self.config_data.get("xml_folder", ""))
+        self.report_folder_var.set(self.config_data.get("report_folder", ""))
         self.output_format_var.set(self.config_data.get("output_filename_format", ""))
         self.sig_fig_var.set(self.config_data.get("significant_figures", 3))
         self.delete_xml_var.set(self.config_data.get("delete_xml_after_processing", True))
@@ -701,6 +715,7 @@ class SettingsEditor:
         """Обновление конфигурации из значений интерфейса"""
         # Общие настройки
         self.config_data["xml_folder"] = self.xml_folder_var.get()
+        self.config_data["report_folder"] = self.report_folder_var.get()
         self.config_data["output_filename_format"] = self.output_format_var.get()
         self.config_data["significant_figures"] = self.sig_fig_var.get()
         self.config_data["delete_xml_after_processing"] = self.delete_xml_var.get()
@@ -753,6 +768,9 @@ class SettingsEditor:
             # Проверка обязательных полей
             if not self.xml_folder_var.get():
                 raise ValueError("Не указана папка с XML файлами")
+
+            if not self.report_folder_var.get():
+                raise ValueError("Не указана папка с для Отчетов")
 
             if not self.config_data["coefficients"]:
                 raise ValueError("Не выбрано ни одного элемента")

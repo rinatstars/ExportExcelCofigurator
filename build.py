@@ -4,7 +4,7 @@ import subprocess
 
 APP_NAME = "ExportExcelConfigurator"
 SPEC_FILE = "ExportExcelConfigurator.spec"
-FINAL_EXE_DIR = r"D:\Project_python\exportAtomExcelExe"
+PAYLOAD_DIR = r"D:\Project_python\exportAtomExcelExe\payload"
 EXPORTATOMEXCEl_PATH = r"D:\Project_python\exportAtomExcel"
 
 
@@ -74,14 +74,23 @@ def copytree_merge(src, dst):
 
 def git_push(version: str):
     try:
-        subprocess.run(["git", "add", "version.txt"], check=True)
-        subprocess.run(["git", "commit", "-m", f"Release v{version}"], check=True)
+        # Проверяем, есть ли изменения
+        status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
+        if status.stdout.strip():  # если есть изменения
+            subprocess.run(["git", "add", "version.txt"], check=True)
+            subprocess.run(["git", "commit", "-m", f"Release v{version}"], check=True)
+            subprocess.run(["git", "push"], check=True)
+            print("✅ Изменения закоммичены и запушены")
+        else:
+            print("ℹ️ Нет изменений для коммита, пропускаем commit/push")
+
+        # В любом случае создаём тег и пушим его
         subprocess.run(["git", "tag", f"v{version}"], check=True)
-        subprocess.run(["git", "push"], check=True)
         subprocess.run(["git", "push", "--tags"], check=True)
-        print(f"✅ Git push завершён: тег v{version}")
+        print(f"🏷 Тег v{version} создан и запушен")
+
     except subprocess.CalledProcessError as e:
-        print("⚠️ Ошибка при git push:", e)
+        print("⚠️ Ошибка при git операции:", e)
 
 
 def build():
@@ -92,14 +101,17 @@ def build():
     # Удалим build/dist, чтобы не было мусора
     if os.path.exists("build"):
         shutil.rmtree("build")
-    if os.path.exists("dist"):
-        shutil.rmtree("dist")
+    if os.path.exists(os.path.join("dist", APP_NAME)):
+        shutil.rmtree(os.path.join("dist", APP_NAME))
 
     # Сгенерируем файл с версией
     create_version_file(version)
 
     # Собираем по .spec
-    subprocess.run(["pyinstaller", SPEC_FILE], check=True)
+    subprocess.run(
+        [os.path.join("venv", "Scripts", "python.exe"), "-m", "PyInstaller", SPEC_FILE],
+        check=True
+    )
 
     # Создаем папку для этой версии
     os.makedirs(dist_dir, exist_ok=True)
@@ -109,17 +121,20 @@ def build():
     shutil.move(exe_path, os.path.join(dist_dir, f"{APP_NAME}.exe"))
     # Перемещаем _internal (он будет в dist/ExportExcelConfigurator v*.*.*/_internal)
     internal_path = os.path.join("dist", APP_NAME, "_internal")
-    shutil.move(internal_path, os.path.join(dist_dir, "_internal"))
+    target = os.path.join(dist_dir, "_internal")
+    if os.path.exists(target):
+        shutil.rmtree(target)
+    shutil.move(internal_path, dist_dir)
 
     # Собираем общий релиз,
     # копируем Конфигуратор
-    copytree_merge(dist_dir, FINAL_EXE_DIR)
+    copytree_merge(dist_dir, PAYLOAD_DIR)
     # копируем скрипт exportAtomExcel
-    copytree_merge(os.path.join(EXPORTATOMEXCEl_PATH, "dist", "latest"), FINAL_EXE_DIR)
+    copytree_merge(os.path.join(EXPORTATOMEXCEl_PATH, "dist", "latest"), PAYLOAD_DIR)
 
     # создаем файл с версиями, сохраняем в конечную папку
     version_EAE = get_version(EXPORTATOMEXCEl_PATH)
-    create_common_version_file(version_EAE, version, FINAL_EXE_DIR)
+    create_common_version_file(version_EAE, version, PAYLOAD_DIR)
 
     # Обновляем latest
     if os.path.exists(latest_dir):

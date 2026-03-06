@@ -1,5 +1,5 @@
 {
-    "xml_folder": "D:\\Результаты анализа",
+    "xml_folder": "C:/Atom 3.3 x64/Reports",
     "output_filename_format": "{date}_{method}_{executor}",
     "include_header": true,
     "header_fields": {
@@ -102,5 +102,6 @@
         }
     },
     "significant_figures": 3,
-    "delete_xml_after_processing": true
+    "delete_xml_after_processing": true,
+    "report_folder": "C:/Atom 3.3 x64/Reports"
 }
